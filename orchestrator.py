@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timezone
 
 from agents import planner_agent, worker_agent, writer_agent, critic_agent
+from guardrails import apply_output_guardrail
 
 MAX_REVISION_ROUNDS = 2  # hard cap -> prevents infinite critic<->writer loop
 
@@ -52,7 +53,16 @@ def run(topic: str) -> dict:
     else:
         log("critic", {"note": f"Max {MAX_REVISION_ROUNDS} revision rounds hit, shipping best draft"})
 
-    trace["final_report"] = draft
+    # 5. OUTPUT GUARDRAIL — runs regardless of critic verdict. The critic
+    #    is an LLM judging its own kind of output (a report); the guardrail
+    #    is a separate, narrower, blocking check specifically on
+    #    groundedness. Different from the critic loop above: this doesn't
+    #    trigger a rewrite, it decides whether to show the report AT ALL.
+    guardrail_result = apply_output_guardrail(topic, draft)
+    log("output_guardrail", guardrail_result)
+
+    trace["final_report"] = guardrail_result["final_output"]
+    trace["guardrail_passed"] = guardrail_result["guardrail_passed"]
     trace["finished_at"] = datetime.now(timezone.utc).isoformat()
     return trace
 
