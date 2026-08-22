@@ -10,13 +10,14 @@ import json
 import time
 from datetime import datetime, timezone
 
-from agents import planner_agent, worker_agent, writer_agent, critic_agent
+from agents import planner_agent, worker_agent, writer_agent, critic_agent, reset_call_log, get_run_cost_summary
 from guardrails import apply_output_guardrail
 
 MAX_REVISION_ROUNDS = 2  # hard cap -> prevents infinite critic<->writer loop
 
 
 def run(topic: str) -> dict:
+    reset_call_log()  # so cost is per-run, not cumulative across topics
     trace = {"topic": topic, "started_at": datetime.now(timezone.utc).isoformat(), "steps": []}
 
     def log(step_name: str, data: dict):
@@ -63,6 +64,7 @@ def run(topic: str) -> dict:
 
     trace["final_report"] = guardrail_result["final_output"]
     trace["guardrail_passed"] = guardrail_result["guardrail_passed"]
+    trace["cost_summary"] = get_run_cost_summary()
     trace["finished_at"] = datetime.now(timezone.utc).isoformat()
     return trace
 
@@ -79,4 +81,8 @@ if __name__ == "__main__":
     print("FINAL REPORT")
     print("=" * 60)
     print(result["final_report"])
+    print("\n" + "=" * 60)
+    print("COST SUMMARY")
+    print("=" * 60)
+    print(json.dumps(result["cost_summary"], indent=2))
     print(f"\n(Full trace saved to trace.json)")

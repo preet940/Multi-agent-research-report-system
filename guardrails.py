@@ -28,6 +28,7 @@ def check_groundedness(topic: str, report: str) -> dict:
         user=f"Topic: {topic}\n\nReport:\n{report}\n\n"
              f'Return JSON: {{"score": 1-5, "reasoning": "...", '
              f'"flagged_claims": ["..."]}}',
+        call_type="output_guardrail",
     )
 
 
