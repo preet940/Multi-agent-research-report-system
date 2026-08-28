@@ -4,3 +4,4 @@ __pycache__/
 trace.json
 .DS_Store
 venv/
+chroma_data/

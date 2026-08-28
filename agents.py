@@ -139,7 +139,22 @@ def _detect_prompt_injection(text: str) -> dict:
 
 
 def worker_agent(sub_question: str) -> dict:
-    """Research one sub-question: search, then summarize with sources."""
+    """Research one sub-question: check cache first, else search + summarize."""
+    from memory import check_cache, store_result
+
+    cache_result = check_cache(sub_question)
+    if cache_result["hit"]:
+        return {
+            "sub_question": sub_question,
+            "summary": cache_result["summary"],
+            "confident": True,
+            "sources": cache_result["sources"],
+            "sources_filtered": 0,
+            "from_cache": True,
+            "cache_distance": cache_result["distance"],
+            "matched_question": cache_result["matched_question"],
+        }
+
     results = search_web(sub_question)
 
     # INPUT GUARDRAIL: screen each retrieved source before it's ever
@@ -185,13 +200,16 @@ def worker_agent(sub_question: str) -> dict:
         ),
         call_type="worker",
     )
-    return {
+    result = {
         "sub_question": sub_question,
         "summary": out["summary"],
         "confident": out.get("confident", True),
         "sources": [r["url"] for r in safe_results],
         "sources_filtered": len(results) - len(safe_results),
+        "from_cache": False,
     }
+    store_result(sub_question, result["summary"], result["sources"])
+    return result
 
 
 # ---------- Writer ----------
