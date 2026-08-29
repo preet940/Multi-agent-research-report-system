@@ -20,13 +20,15 @@ client = OpenAI(
     api_key=os.environ["GROQ_API_KEY"],
 )
 
-MODEL = "llama-3.3-70b-versatile"  # swap for any model Groq currently serves
+MODEL = "openai/gpt-oss-120b"  # llama-3.3-70b-versatile was deprecated/removed;
+                                 # verified via GET /v1/models that this is
+                                 # currently active on this account
 
-# Groq pricing for llama-3.3-70b-versatile as of writing (check
-# console.groq.com/docs/models for current rates -- these change).
-# Prices are per 1M tokens.
-PRICE_PER_1M_INPUT = 0.59
-PRICE_PER_1M_OUTPUT = 0.79
+# Groq pricing for openai/gpt-oss-120b, per the account's own /v1/models
+# response (per-token, converted to per-1M here). Re-check periodically --
+# pricing/models change; this is why hardcoding assumptions is risky.
+PRICE_PER_1M_INPUT = 0.15
+PRICE_PER_1M_OUTPUT = 0.60
 
 # Every LLM call appends its usage here. The orchestrator reads this
 # after a run to report real cost -- not an estimate, actual token counts
